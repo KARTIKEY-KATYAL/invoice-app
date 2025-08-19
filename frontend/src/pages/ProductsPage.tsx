@@ -3,6 +3,9 @@ import { addProduct, removeProduct } from '@/store/slices/productSlice'
 import { logout } from '@/store/slices/authSlice'
 import { AuthLayout, TopLogoutButton } from '@/components/layout/AuthLayout'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Table, THead, TBody, TRow, THeadCell, TCell } from '@/components/ui/table'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import type { RootState } from '@/store'
@@ -28,61 +31,85 @@ export const ProductsPage: React.FC = () => {
 
   return (
     <AuthLayout action={<TopLogoutButton onClick={()=>{dispatch(logout()); navigate('/login')}} />}>      
-      <h1 className="text-4xl font-bold mb-2">Add Products</h1>
-      <p className="text-sm text-neutral-400 mb-10 max-w-md">This is basic login page which is used for levitation assignment purpose.</p>
-      <form onSubmit={add} className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-5xl items-end mb-10">
-        <div>
-          <label className="block text-sm mb-1 font-medium">Product Name</label>
-          <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Enter the product name" className="w-full bg-neutral-900 border border-neutral-700 rounded-sm h-12 px-3 text-sm" />
+      <div className="mb-8 md:mb-10">
+        <h1 className="text-3xl md:text-4xl font-bold mb-3 leading-tight">Add Products</h1>
+        <p className="text-xs md:text-sm text-neutral-400 leading-relaxed max-w-md">This is basic login page which is used for levitation assignment purpose.</p>
+      </div>
+      <form onSubmit={add} className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl items-end mb-10 md:mb-12">
+        <div className="space-y-2">
+          <Label requiredMark>Product Name</Label>
+          <Input 
+            value={form.name} 
+            onChange={e=>setForm(f=>({...f,name:e.target.value}))} 
+            placeholder="Enter the product name" 
+            className="h-11"
+          />
         </div>
-        <div>
-          <label className="block text-sm mb-1 font-medium">Product Price</label>
-          <input value={form.rate} onChange={e=>setForm(f=>({...f,rate:e.target.value}))} placeholder="Enter the price" className="w-full bg-neutral-900 border border-neutral-700 rounded-sm h-12 px-3 text-sm" />
+        <div className="space-y-2">
+          <Label requiredMark>Product Price</Label>
+          <Input 
+            value={form.rate} 
+            onChange={e=>setForm(f=>({...f,rate:e.target.value}))} 
+            placeholder="Enter the price" 
+            className="h-11"
+          />
         </div>
-        <div>
-          <label className="block text-sm mb-1 font-medium">Quantity</label>
-          <input value={form.qty} onChange={e=>setForm(f=>({...f,qty:e.target.value}))} placeholder="Enter the Qty" className="w-full bg-neutral-900 border border-neutral-700 rounded-sm h-12 px-3 text-sm" />
+        <div className="space-y-2">
+          <Label requiredMark>Quantity</Label>
+          <Input 
+            value={form.qty} 
+            onChange={e=>setForm(f=>({...f,qty:e.target.value}))} 
+            placeholder="Enter the Qty" 
+            className="h-11"
+          />
         </div>
-        <div className="flex items-center gap-3 h-12">
-          <Button type="submit" className="bg-neutral-800 hover:bg-neutral-700 text-lime-300 rounded-sm h-12">Add Product +</Button>
+        <div className="flex items-center gap-3">
+          <Button type="submit" className="bg-neutral-800 hover:bg-neutral-700 text-lime-300 rounded-lg h-11 px-6 font-medium transition-all hover:shadow-lg">Add Product +</Button>
         </div>
       </form>
-      <div className="w-full max-w-5xl overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-white text-neutral-900 text-xs">
-            <tr>
-              <th className="text-left font-medium px-4 py-3">Product name</th>
-              <th className="text-left font-medium px-4 py-3">Price</th>
-              <th className="text-left font-medium px-4 py-3">Quantity</th>
-              <th className="text-left font-medium px-4 py-3">Total Price</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody className="bg-neutral-950 text-neutral-200 divide-y divide-white/5">
+  <div className="w-full max-w-6xl overflow-x-auto rounded-md -mx-4 px-4 md:mx-0 md:px-0">
+        <Table className="text-sm border border-white/10 rounded-xl overflow-hidden">
+          <THead>
+            <TRow className="bg-white text-neutral-900 text-xs font-medium">
+              <THeadCell className="px-4 py-3 text-left">Product name</THeadCell>
+              <THeadCell className="px-4 py-3 text-center">Price</THeadCell>
+              <THeadCell className="px-4 py-3 text-center">Quantity</THeadCell>
+              <THeadCell className="px-4 py-3 text-center">Total Price</THeadCell>
+              <THeadCell className="px-4 py-3 text-center">Actions</THeadCell>
+            </TRow>
+          </THead>
+          <TBody className="bg-neutral-950/50 text-neutral-200">
             {items.map((p: ProductInput) => (
-              <tr key={p.id} className="">
-                <td className="px-4 py-3 italic">( {p.name} )</td>
-                <td className="px-4 py-3">{p.rate}</td>
-                <td className="px-4 py-3">{p.qty}</td>
-                <td className="px-4 py-3">INR {p.rate * p.qty}</td>
-                <td className="px-4 py-3 text-right"><button onClick={()=>dispatch(removeProduct(p.id))} className="text-red-400 text-xs">remove</button></td>
-              </tr>
+              <TRow key={p.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                <TCell className="px-4 py-4 italic">( {p.name} )</TCell>
+                <TCell className="px-4 py-4 text-center">₹{p.rate}</TCell>
+                <TCell className="px-4 py-4 text-center">{p.qty}</TCell>
+                <TCell className="px-4 py-4 text-center font-medium">₹{p.rate * p.qty}</TCell>
+                <TCell className="px-4 py-4 text-center">
+                  <button 
+                    onClick={()=>dispatch(removeProduct(p.id))} 
+                    className="text-red-400 text-xs hover:text-red-300 hover:bg-red-400/10 px-2 py-1 rounded transition-colors"
+                  >
+                    remove
+                  </button>
+                </TCell>
+              </TRow>
             ))}
-            <tr className="font-medium">
-              <td colSpan={3} className="px-4 py-3 text-right">Sub-Total</td>
-              <td className="px-4 py-3">INR {subTotal.toFixed(2)}</td>
-              <td></td>
-            </tr>
-            <tr className="font-medium">
-              <td colSpan={3} className="px-4 py-3 text-right">Incl + GST 18%</td>
-              <td className="px-4 py-3">INR {total.toFixed(2)}</td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
+            <TRow className="font-medium border-t-2 border-white/20">
+              <TCell colSpan={3} className="px-4 py-4 text-right text-neutral-400">Sub-Total</TCell>
+              <TCell className="px-4 py-4 text-center">₹{subTotal.toFixed(2)}</TCell>
+              <TCell className="px-4 py-4" />
+            </TRow>
+            <TRow className="font-medium">
+              <TCell colSpan={3} className="px-4 py-4 text-right text-neutral-400">Incl + GST 18%</TCell>
+              <TCell className="px-4 py-4 text-center text-lime-300 font-semibold">₹{total.toFixed(2)}</TCell>
+              <TCell className="px-4 py-4" />
+            </TRow>
+          </TBody>
+        </Table>
       </div>
       <div className="mt-10">
-        <Button asChild className="bg-neutral-800 hover:bg-neutral-700 text-lime-300 rounded-sm">
+        <Button asChild className="bg-neutral-800 hover:bg-neutral-700 text-lime-300 rounded-lg h-11 px-8 font-medium transition-all hover:shadow-lg">
           <Link to="/invoice">Generate PDF Invoice</Link>
         </Button>
       </div>

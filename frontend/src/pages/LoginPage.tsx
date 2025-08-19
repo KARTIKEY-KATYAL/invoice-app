@@ -4,6 +4,9 @@ import { loginStart, loginSuccess, loginFailure } from '@/store/slices/authSlice
 import type { RootState } from '@/store'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { RightImage } from '@/components/layout/RightImage'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 
@@ -31,30 +34,45 @@ export const LoginPage: React.FC = () => {
   }
 
   return (
-    <AuthLayout action={<div className="border border-lime-300/60 text-lime-300 rounded-sm text-[11px] px-3 py-1">Connecting People With Technology</div>} right={<div className="w-full max-w-md aspect-[4/3] rounded-md bg-[url('https://images.unsplash.com/photo-1550439062-609e1531270e?auto=format&fit=crop&w=800&q=60')] bg-cover" /> }>
-      <div className="flex items-center gap-4 mb-8">
-        <span className="bg-white text-black w-12 h-12 rounded-md inline-flex items-center justify-center font-bold">⟪⟫</span>
-        <div>
-          <h1 className="text-3xl font-bold">Let the Journey Begin!</h1>
-          <p className="text-sm text-neutral-400 mt-2 max-w-sm">This is basic login page which is used for levitation assignment purpose.</p>
+    <AuthLayout reverse action={<div className="hidden sm:block border border-lime-300/60 text-lime-300 rounded-sm text-[11px] px-3 py-1 hover:bg-lime-300/5 transition-colors">Connecting People With Technology</div>} right={<RightImage type="login" /> }>
+      <div className="flex items-start gap-4 mb-8 sm:mb-10">
+        <span className="bg-white text-black w-12 h-12 rounded-lg inline-flex items-center justify-center font-bold text-lg shadow-lg flex-shrink-0">⟪⟫</span>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold leading-tight mb-3">Let the Journey Begin!</h1>
+          <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed max-w-md">This is basic login page which is used for levitation assignment purpose.</p>
         </div>
       </div>
-      <form onSubmit={submit} className="space-y-6 max-w-lg">
-        <div>
-          <label className="block text-sm mb-1 font-medium">Email Address</label>
-          <input value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} placeholder="Enter Email ID" className="w-full bg-neutral-900 border border-neutral-700 rounded-sm h-12 px-3 text-sm" />
-          <p className="text-[11px] text-neutral-500 mt-1">This email will be displayed with your inquiry</p>
+      <form onSubmit={submit} className="space-y-5 sm:space-y-6 max-w-lg">
+        <div className="space-y-2">
+          <Label requiredMark>Email Address</Label>
+          <Input 
+            value={form.email} 
+            onChange={e=>setForm(f=>({...f,email:e.target.value}))} 
+            placeholder="Enter Email ID" 
+            className="h-11"
+          />
+          <p className="text-[10px] sm:text-[11px] text-neutral-500">This email will be displayed with your inquiry</p>
         </div>
-        <div>
-          <label className="block text-sm mb-1 font-medium">Current Password</label>
-          <input type="password" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} placeholder="Enter the Password" className="w-full bg-neutral-900 border border-neutral-700 rounded-sm h-12 px-3 text-sm" />
+        <div className="space-y-2">
+          <Label requiredMark>Current Password</Label>
+          <Input 
+            type="password" 
+            value={form.password} 
+            onChange={e=>setForm(f=>({...f,password:e.target.value}))} 
+            placeholder="Enter the Password" 
+            className="h-11"
+          />
         </div>
-        {error && <div className="text-red-400 text-sm">{error}</div>}
-        <div className="flex items-center gap-6">
-          <Button disabled={status==='loading'} className="bg-neutral-800 hover:bg-neutral-700 text-lime-300 rounded-sm">Login now</Button>
-          <Link to="/forgot" className="text-sm text-neutral-400">Forget password ?</Link>
+        {error && <div className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{error}</div>}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2">
+          <Button disabled={status==='loading'} className="bg-neutral-800 hover:bg-neutral-700 text-lime-300 rounded-lg h-11 px-8 font-medium transition-all hover:shadow-lg w-full sm:w-auto">
+            {status === 'loading' ? 'Signing in...' : 'Login now'}
+          </Button>
+          <Link to="/forgot" className="text-xs sm:text-sm text-neutral-400 hover:text-lime-300 transition-colors text-center sm:text-left">Forget password ?</Link>
         </div>
-        <p className="text-xs text-neutral-500">Don't have account? <Link to="/register" className="text-lime-300">Register</Link></p>
+        <div className="pt-4 border-t border-white/10">
+          <p className="text-[10px] sm:text-xs text-neutral-500 text-center">Don't have account? <Link to="/register" className="text-lime-300 hover:text-lime-200 font-medium transition-colors">Register here</Link></p>
+        </div>
       </form>
     </AuthLayout>
   )
