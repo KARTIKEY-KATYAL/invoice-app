@@ -25,6 +25,8 @@ async function request(path: string, opts: RequestInit = {}) {
 export const api = {
   register: (data: { name: string; email: string; password: string }) => request('/api/auth/register', { method:'POST', body: JSON.stringify(data) }),
   login: (data: { email: string; password: string }) => request('/api/auth/login', { method:'POST', body: JSON.stringify(data) }),
+  forgot: (data: { email: string }) => request('/api/auth/forgot', { method: 'POST', body: JSON.stringify(data) }),
+  reset: (data: { token: string; password: string }) => request('/api/auth/reset', { method: 'POST', body: JSON.stringify(data) }),
   generateInvoice: (token: string, items: { name: string; qty: number; rate: number }[]) => fetch(`${API_BASE}/api/invoice/generate`, {
     method:'POST',
     headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` },

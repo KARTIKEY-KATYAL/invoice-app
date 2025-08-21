@@ -112,3 +112,12 @@ export {
   TableCell,
   TableCaption,
 }
+
+// Backwards-compatible aliases used in the app
+export const THead = TableHeader
+export const TBody = TableBody
+export const TFoot = TableFooter
+export const TRow = TableRow
+export const THeadCell = TableHead
+export const TCell = TableCell
+export const TCaption = TableCaption

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Table, TBody, THead, TRow, THeadCell, TCell } from '@/components/ui/table'
 import { Link } from 'react-router-dom'
 import { api } from '@/lib/api'
+import { useMutation } from '@tanstack/react-query'
 import { BrandLogo } from '@/components/ui/logo'
 
 export const InvoicePage: React.FC = () => {
@@ -15,10 +16,19 @@ export const InvoicePage: React.FC = () => {
   const gst = subTotal * 0.18
   const total = subTotal + gst
 
-  const downloadInvoice = async () => {
-    if(!user?.token) { alert('Login expired'); return }
-    try {
-      const blob = await api.generateInvoice(user.token, items.map((p:ProductInput)=> ({ name: p.name, qty: p.qty, rate: p.rate })))
+  type InvoiceVars = { token: string; items: { name: string; qty: number; rate: number }[] }
+
+  const mutationFn = async (vars: InvoiceVars): Promise<Blob> => {
+    return api.generateInvoice(vars.token, vars.items)
+  }
+
+  const mutation = useMutation<Blob, Error, InvoiceVars>({
+    mutationFn,
+    onError: (err: unknown) => {
+      const message = (err as Error)?.message || 'Failed to generate invoice'
+      alert(message)
+    },
+    onSuccess: (blob: Blob) => {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -27,9 +37,12 @@ export const InvoicePage: React.FC = () => {
       a.click()
       a.remove()
       URL.revokeObjectURL(url)
-    } catch (e:any) {
-      alert(e.message || 'Failed to generate invoice')
     }
+  })
+
+  const downloadInvoice = () => {
+    if(!user?.token) { alert('Login expired'); return }
+    mutation.mutate({ token: user.token, items: items.map((p:ProductInput)=> ({ name: p.name, qty: p.qty, rate: p.rate })) })
   }
 
   return (

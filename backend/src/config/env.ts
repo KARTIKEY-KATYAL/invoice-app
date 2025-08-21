@@ -16,3 +16,10 @@ export const env = {
   rateLimitWindowMs: 15 * 60 * 1000,
   rateLimitMax: 100
 }
+
+export const mail = {
+  host: process.env.MAILTRAP_HOST || 'sandbox.smtp.mailtrap.io',
+  port: parseInt(process.env.MAILTRAP_PORT || '25', 10),
+  user: process.env.MAILTRAP_USER || '',
+  pass: process.env.MAILTRAP_PASSWORD || ''
+}
