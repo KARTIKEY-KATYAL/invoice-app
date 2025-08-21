@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { z } from 'zod'
 import { addProduct, removeProduct } from '@/store/slices/productSlice'
 import { logout } from '@/store/slices/authSlice'
 import { AuthLayout, TopLogoutButton } from '@/components/layout/AuthLayout'
@@ -11,108 +12,293 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import type { RootState } from '@/store'
 import type { ProductInput } from '@/store/slices/productSlice'
 
+const productSchema = z.object({
+  name: z.string().min(1, 'Product name is required'),
+  rate: z.string().min(1, 'Price is required').refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, 'Price must be a positive number'),
+  qty: z.string().min(1, 'Quantity is required').refine(val => !isNaN(parseInt(val)) && parseInt(val) > 0, 'Quantity must be a positive number')
+})
+
 export const ProductsPage: React.FC = () => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const items = useAppSelector((s: RootState) => s.products.items)
+  const user = useAppSelector((s: RootState) => s.auth.user)
   const [form, setForm] = useState({ name: '', rate: '', qty: '' })
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const add = (e: React.FormEvent) => {
-    e.preventDefault()
-    const rate = parseFloat(form.rate); const qty = parseInt(form.qty)
-    if(!form.name || isNaN(rate) || isNaN(qty)) return
-    dispatch(addProduct({ name: form.name, rate, qty }))
-    setForm({ name: '', rate: '', qty: '' })
+  const validateField = (field: keyof typeof form, value: string) => {
+    const fieldSchema = field === 'name' 
+      ? z.string().min(1, 'Product name is required')
+      : field === 'rate'
+      ? z.string().min(1, 'Price is required').refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, 'Price must be a positive number')
+      : z.string().min(1, 'Quantity is required').refine(val => !isNaN(parseInt(val)) && parseInt(val) > 0, 'Quantity must be a positive number')
+    
+    const result = fieldSchema.safeParse(value)
+    if (!result.success) {
+      setValidationErrors(prev => ({ ...prev, [field]: result.error.issues[0].message }))
+    } else {
+      setValidationErrors(prev => {
+        const { [field]: _, ...rest } = prev
+        return rest
+      })
+    }
   }
 
-  const subTotal = items.reduce((s:number,p:ProductInput)=> s + p.rate * p.qty, 0)
+  const add = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    
+    const parsed = productSchema.safeParse(form)
+    if (!parsed.success) {
+      const fieldErrors: Record<string, string> = {}
+      parsed.error.issues.forEach(issue => {
+        if (issue.path[0]) {
+          fieldErrors[issue.path[0] as string] = issue.message
+        }
+      })
+      setValidationErrors(fieldErrors)
+      setIsSubmitting(false)
+      return
+    }
+
+    const rate = parseFloat(form.rate)
+    const qty = parseInt(form.qty)
+    
+    dispatch(addProduct({ name: form.name, rate, qty }))
+    setForm({ name: '', rate: '', qty: '' })
+    setValidationErrors({})
+    setIsSubmitting(false)
+  }
+
+  const handleRemoveProduct = (id: string) => {
+    if (window.confirm('Are you sure you want to remove this product?')) {
+      dispatch(removeProduct(id))
+    }
+  }
+
+  const subTotal = items.reduce((s: number, p: ProductInput) => s + p.rate * p.qty, 0)
   const gst = subTotal * 0.18
   const total = subTotal + gst
 
   return (
-    <AuthLayout action={<TopLogoutButton onClick={()=>{dispatch(logout()); navigate('/login')}} />}>      
+    <AuthLayout 
+      action={
+        <TopLogoutButton 
+          onClick={() => {
+            if (window.confirm('Are you sure you want to logout?')) {
+              dispatch(logout())
+              navigate('/login')
+            }
+          }} 
+        />
+      }
+    >      
       <div className="mb-8 md:mb-10">
-        <h1 className="text-3xl md:text-4xl font-bold mb-3 leading-tight">Add Products</h1>
-        <p className="text-xs md:text-sm text-neutral-400 leading-relaxed max-w-md">This is basic login page which is used for levitation assignment purpose.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 leading-tight text-white">
+              Product Management 📦
+            </h1>
+            <p className="text-sm md:text-base text-neutral-400 leading-relaxed">
+              Add products to generate professional invoices. Welcome back, {user?.name}!
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-neutral-500">Total Products</p>
+            <p className="text-2xl font-bold text-lime-300">{items.length}</p>
+          </div>
+        </div>
       </div>
-      <form onSubmit={add} className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl items-end mb-10 md:mb-12">
-        <div className="space-y-2">
-          <Label requiredMark>Product Name</Label>
-          <Input 
-            value={form.name} 
-            onChange={e=>setForm(f=>({...f,name:e.target.value}))} 
-            placeholder="Enter the product name" 
-            className="h-11"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label requiredMark>Product Price</Label>
-          <Input 
-            value={form.rate} 
-            onChange={e=>setForm(f=>({...f,rate:e.target.value}))} 
-            placeholder="Enter the price" 
-            className="h-11"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label requiredMark>Quantity</Label>
-          <Input 
-            value={form.qty} 
-            onChange={e=>setForm(f=>({...f,qty:e.target.value}))} 
-            placeholder="Enter the Qty" 
-            className="h-11"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <Button type="submit" className="bg-neutral-800 hover:bg-neutral-700 text-lime-300 rounded-lg h-11 px-6 font-medium transition-all hover:shadow-lg">Add Product +</Button>
-        </div>
-      </form>
-  <div className="w-full max-w-6xl overflow-x-auto rounded-md -mx-4 px-4 md:mx-0 md:px-0">
-        <Table className="text-sm border border-white/10 rounded-xl overflow-hidden">
-          <THead>
-            <TRow className="bg-white text-neutral-900 text-xs font-medium">
-              <THeadCell className="px-4 py-3 text-left">Product name</THeadCell>
-              <THeadCell className="px-4 py-3 text-center">Price</THeadCell>
-              <THeadCell className="px-4 py-3 text-center">Quantity</THeadCell>
-              <THeadCell className="px-4 py-3 text-center">Total Price</THeadCell>
-              <THeadCell className="px-4 py-3 text-center">Actions</THeadCell>
-            </TRow>
-          </THead>
-          <TBody className="bg-neutral-950/50 text-neutral-200">
-            {items.map((p: ProductInput) => (
-              <TRow key={p.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                <TCell className="px-4 py-4 italic">( {p.name} )</TCell>
-                <TCell className="px-4 py-4 text-center">₹{p.rate}</TCell>
-                <TCell className="px-4 py-4 text-center">{p.qty}</TCell>
-                <TCell className="px-4 py-4 text-center font-medium">₹{p.rate * p.qty}</TCell>
-                <TCell className="px-4 py-4 text-center">
-                  <button 
-                    onClick={()=>dispatch(removeProduct(p.id))} 
-                    className="text-red-400 text-xs hover:text-red-300 hover:bg-red-400/10 px-2 py-1 rounded transition-colors"
-                  >
-                    remove
-                  </button>
-                </TCell>
-              </TRow>
-            ))}
-            <TRow className="font-medium border-t-2 border-white/20">
-              <TCell colSpan={3} className="px-4 py-4 text-right text-neutral-400">Sub-Total</TCell>
-              <TCell className="px-4 py-4 text-center">₹{subTotal.toFixed(2)}</TCell>
-              <TCell className="px-4 py-4" />
-            </TRow>
-            <TRow className="font-medium">
-              <TCell colSpan={3} className="px-4 py-4 text-right text-neutral-400">Incl + GST 18%</TCell>
-              <TCell className="px-4 py-4 text-center text-lime-300 font-semibold">₹{total.toFixed(2)}</TCell>
-              <TCell className="px-4 py-4" />
-            </TRow>
-          </TBody>
-        </Table>
+
+      {/* Add Product Form */}
+      <div className="bg-neutral-900/50 border border-white/10 rounded-xl p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-6 text-white flex items-center gap-2">
+          <span>➕</span> Add New Product
+        </h2>
+        <form onSubmit={add} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+          <div className="space-y-2">
+            <Label requiredMark className="text-sm font-medium">Product Name</Label>
+            <Input 
+              value={form.name} 
+              onChange={e => {
+                const value = e.target.value
+                setForm(f => ({...f, name: value}))
+                if (value) validateField('name', value)
+              }}
+              onBlur={e => validateField('name', e.target.value)}
+              placeholder="Enter product name" 
+              className={`h-12 text-base transition-all duration-200 ${
+                validationErrors.name ? 'border-red-400 focus:border-red-400' : 'focus:border-lime-300'
+              }`}
+              disabled={isSubmitting}
+            />
+            {validationErrors.name && (
+              <p className="text-xs text-red-400 flex items-center gap-1">
+                <span>⚠️</span> {validationErrors.name}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label requiredMark className="text-sm font-medium">Price (₹)</Label>
+            <Input 
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.rate} 
+              onChange={e => {
+                const value = e.target.value
+                setForm(f => ({...f, rate: value}))
+                if (value) validateField('rate', value)
+              }}
+              onBlur={e => validateField('rate', e.target.value)}
+              placeholder="0.00" 
+              className={`h-12 text-base transition-all duration-200 ${
+                validationErrors.rate ? 'border-red-400 focus:border-red-400' : 'focus:border-lime-300'
+              }`}
+              disabled={isSubmitting}
+            />
+            {validationErrors.rate && (
+              <p className="text-xs text-red-400 flex items-center gap-1">
+                <span>⚠️</span> {validationErrors.rate}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label requiredMark className="text-sm font-medium">Quantity</Label>
+            <Input 
+              type="number"
+              min="1"
+              value={form.qty} 
+              onChange={e => {
+                const value = e.target.value
+                setForm(f => ({...f, qty: value}))
+                if (value) validateField('qty', value)
+              }}
+              onBlur={e => validateField('qty', e.target.value)}
+              placeholder="1" 
+              className={`h-12 text-base transition-all duration-200 ${
+                validationErrors.qty ? 'border-red-400 focus:border-red-400' : 'focus:border-lime-300'
+              }`}
+              disabled={isSubmitting}
+            />
+            {validationErrors.qty && (
+              <p className="text-xs text-red-400 flex items-center gap-1">
+                <span>⚠️</span> {validationErrors.qty}
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || Object.keys(validationErrors).length > 0}
+              className="bg-lime-500 hover:bg-lime-600 text-black font-semibold rounded-lg h-12 px-6 transition-all duration-200 hover:shadow-lg hover:shadow-lime-500/25 w-full lg:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin">⏳</span> Adding...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <span>➕</span> Add Product
+                </span>
+              )}
+            </Button>
+          </div>
+        </form>
       </div>
-      <div className="mt-10">
-        <Button asChild className="bg-neutral-800 hover:bg-neutral-700 text-lime-300 rounded-lg h-11 px-8 font-medium transition-all hover:shadow-lg">
-          <Link to="/invoice">Generate PDF Invoice</Link>
-        </Button>
-      </div>
+
+      {/* Products Table */}
+      {items.length > 0 ? (
+        <div className="bg-neutral-900/50 border border-white/10 rounded-xl overflow-hidden mb-8">
+          <div className="p-6 border-b border-white/10">
+            <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+              <span>📋</span> Product List
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <Table className="text-sm">
+              <THead>
+                <TRow className="bg-neutral-800 text-white">
+                  <THeadCell className="px-6 py-4 text-left font-semibold">Product Name</THeadCell>
+                  <THeadCell className="px-6 py-4 text-center font-semibold">Price (₹)</THeadCell>
+                  <THeadCell className="px-6 py-4 text-center font-semibold">Quantity</THeadCell>
+                  <THeadCell className="px-6 py-4 text-center font-semibold">Total (₹)</THeadCell>
+                  <THeadCell className="px-6 py-4 text-center font-semibold">Actions</THeadCell>
+                </TRow>
+              </THead>
+              <TBody className="bg-neutral-950/50">
+                {items.map((p: ProductInput) => (
+                  <TRow key={p.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <TCell className="px-6 py-4 font-medium text-white">{p.name}</TCell>
+                    <TCell className="px-6 py-4 text-center text-neutral-300">₹{p.rate.toFixed(2)}</TCell>
+                    <TCell className="px-6 py-4 text-center text-neutral-300">{p.qty}</TCell>
+                    <TCell className="px-6 py-4 text-center font-semibold text-lime-300">₹{(p.rate * p.qty).toFixed(2)}</TCell>
+                    <TCell className="px-6 py-4 text-center">
+                      <button 
+                        onClick={() => handleRemoveProduct(p.id)} 
+                        className="text-red-400 hover:text-red-300 hover:bg-red-400/10 px-3 py-1 rounded-lg transition-all duration-200 text-sm font-medium"
+                      >
+                        🗑️ Remove
+                      </button>
+                    </TCell>
+                  </TRow>
+                ))}
+              </TBody>
+            </Table>
+          </div>
+          
+          {/* Summary */}
+          <div className="p-6 bg-neutral-800/50 border-t border-white/10">
+            <div className="space-y-2 text-right max-w-md ml-auto">
+              <div className="flex justify-between items-center text-neutral-400">
+                <span>Subtotal:</span>
+                <span className="font-medium">₹{subTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center text-neutral-400">
+                <span>GST (18%):</span>
+                <span className="font-medium">₹{gst.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center text-lg font-bold text-lime-300 border-t border-white/10 pt-2">
+                <span>Total Amount:</span>
+                <span>₹{total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-neutral-900/50 border border-white/10 rounded-xl p-12 text-center mb-8">
+          <div className="text-6xl mb-4">📦</div>
+          <h3 className="text-xl font-semibold text-white mb-2">No Products Added</h3>
+          <p className="text-neutral-400">Add your first product using the form above to get started.</p>
+        </div>
+      )}
+
+      {/* Generate Invoice Button */}
+      {items.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-4 justify-center sm:justify-start">
+          <Button asChild className="bg-lime-500 hover:bg-lime-600 text-black font-semibold rounded-lg h-12 px-8 transition-all duration-200 hover:shadow-lg hover:shadow-lime-500/25">
+            <Link to="/invoice" className="flex items-center gap-2">
+              <span>📄</span> Generate PDF Invoice
+            </Link>
+          </Button>
+          <Button 
+            onClick={() => {
+              if (window.confirm('Are you sure you want to clear all products?')) {
+                items.forEach(item => dispatch(removeProduct(item.id)))
+              }
+            }}
+            className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 hover:border-red-500/40 font-semibold rounded-lg h-12 px-8 transition-all duration-200"
+          >
+            <span className="flex items-center gap-2">
+              <span>🗑️</span> Clear All
+            </span>
+          </Button>
+        </div>
+      )}
     </AuthLayout>
   )
 }

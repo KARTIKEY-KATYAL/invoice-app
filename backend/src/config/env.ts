@@ -18,10 +18,9 @@ const getFrontendOrigins = () => {
   if (process.env.NODE_ENV === 'production') {
     return [
       'https://invoice-hnj93etwp-kartikey-katyals-projects.vercel.app',
-      'https://invoice-app-beta-lac.vercel.app/',
+      'https://invoice-app-beta-lac.vercel.app',
       'https://invoice-m5gkv5vbq-kartikey-katyals-projects.vercel.app',
       'https://invoice-app-kartikey-katyals-projects.vercel.app',
-    
     ]
   }
   
