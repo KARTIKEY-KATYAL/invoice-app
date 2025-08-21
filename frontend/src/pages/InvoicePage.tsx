@@ -5,6 +5,8 @@ import { AuthLayout } from '@/components/layout/AuthLayout'
 import { Button } from '@/components/ui/button'
 import { Table, TBody, THead, TRow, THeadCell, TCell } from '@/components/ui/table'
 import { Link } from 'react-router-dom'
+import { api } from '@/lib/api'
+import { BrandLogo } from '@/components/ui/logo'
 
 export const InvoicePage: React.FC = () => {
   const { items } = useAppSelector((s: RootState) => s.products as any)
@@ -14,8 +16,20 @@ export const InvoicePage: React.FC = () => {
   const total = subTotal + gst
 
   const downloadInvoice = async () => {
-    // TODO: call backend /api/invoice generate endpoint returning PDF blob
-    alert('Backend integration pending. This will download PDF.')
+    if(!user?.token) { alert('Login expired'); return }
+    try {
+      const blob = await api.generateInvoice(user.token, items.map((p:ProductInput)=> ({ name: p.name, qty: p.qty, rate: p.rate })))
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'invoice.pdf'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e:any) {
+      alert(e.message || 'Failed to generate invoice')
+    }
   }
 
   return (
@@ -32,13 +46,7 @@ export const InvoicePage: React.FC = () => {
         <div className="bg-white rounded-xl text-neutral-900 p-6 sm:p-10 shadow-2xl relative overflow-hidden">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 mb-8">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-black text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">⟪⟫</div>
-              <div className="text-sm">
-                <div className="font-semibold text-lg">Levitation</div>
-                <div className="text-xs text-neutral-500 -mt-1">infotech</div>
-              </div>
-            </div>
+            <BrandLogo size={48} />
             <div className="text-right">
               <div className="text-sm tracking-wide font-semibold text-neutral-800">INVOICE GENERATOR</div>
               <div className="text-xs text-neutral-500 mt-1">Sample Output should be this</div>

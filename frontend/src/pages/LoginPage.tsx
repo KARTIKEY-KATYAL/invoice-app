@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RightImage } from '@/components/layout/RightImage'
+import { BrandLogo } from '@/components/ui/logo'
 import { Link, useNavigate } from 'react-router-dom'
+import { api } from '@/lib/api'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 
 const schema = z.object({ email: z.string().email(), password: z.string().min(6) })
@@ -24,19 +26,18 @@ export const LoginPage: React.FC = () => {
     if(!parsed.success) { alert(parsed.error.issues[0].message); return }
     try {
       dispatch(loginStart())
-      // TODO: replace with real API
-      await new Promise(r=>setTimeout(r,400))
-      dispatch(loginSuccess({ id: '1', name: 'User', email: form.email, token: 'demo-token'}))
+  const data = await api.login(form)
+  dispatch(loginSuccess(data))
       navigate('/products')
     } catch (err: any) {
-      dispatch(loginFailure('Login failed'))
+  dispatch(loginFailure(err.message || 'Login failed'))
     }
   }
 
   return (
     <AuthLayout reverse action={<div className="hidden sm:block border border-lime-300/60 text-lime-300 rounded-sm text-[11px] px-3 py-1 hover:bg-lime-300/5 transition-colors">Connecting People With Technology</div>} right={<RightImage type="login" /> }>
-      <div className="flex items-start gap-4 mb-8 sm:mb-10">
-        <span className="bg-white text-black w-12 h-12 rounded-lg inline-flex items-center justify-center font-bold text-lg shadow-lg flex-shrink-0">⟪⟫</span>
+      <div className="flex flex-col items-start gap-4 mb-8 sm:mb-10">
+        <BrandLogo size={48} />
         <div className="flex-1 min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold leading-tight mb-3">Let the Journey Begin!</h1>
           <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed max-w-md">This is basic login page which is used for levitation assignment purpose.</p>

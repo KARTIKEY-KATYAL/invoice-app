@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RightImage } from '@/components/layout/RightImage'
 import { Link, useNavigate } from 'react-router-dom'
+import { api } from '@/lib/api'
 
 const schema = z.object({ name: z.string().min(2), email: z.string().email(), password: z.string().min(6) })
 
@@ -17,9 +18,12 @@ export const RegisterPage: React.FC = () => {
     e.preventDefault()
     const parsed = schema.safeParse(form)
     if(!parsed.success) { alert(parsed.error.issues[0].message); return }
-    // TODO call registration API
-    await new Promise(r=>setTimeout(r,500))
-    navigate('/login')
+    try {
+      await api.register(form)
+      navigate('/login')
+    } catch (e:any) {
+      alert(e.message)
+    }
   }
 
   return (

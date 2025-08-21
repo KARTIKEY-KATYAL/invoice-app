@@ -1,18 +1,13 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { BrandLogo } from '@/components/ui/logo'
 
 // reverse: puts the `right` slot BEFORE the children on large screens (used for Login page to match design)
 export const AuthLayout: React.FC<{children: React.ReactNode, right?: React.ReactNode, action?: React.ReactNode, reverse?: boolean}> = ({children, right, action, reverse}) => {
   return (
     <div className="min-h-screen w-full bg-neutral-950 text-neutral-200 flex flex-col relative overflow-hidden">
       <header className="h-16 flex items-center justify-between px-4 sm:px-8 border-b border-white/10 backdrop-blur-sm bg-neutral-950/80 sticky top-0 z-10">
-        <div className="flex items-center gap-3 font-semibold text-lg">
-          <span className="bg-white text-black w-10 h-10 rounded-lg inline-flex items-center justify-center font-bold text-lg shadow-lg">⟪⟫</span>
-          <div className="leading-tight">
-            <div className="text-lg">levitation</div>
-            <div className="text-[10px] uppercase tracking-wide text-neutral-400 -mt-1">infotech</div>
-          </div>
-        </div>
+        <BrandLogo />
         {action}
       </header>
       <main className={"flex-1 flex flex-col " + (reverse ? 'lg:flex-row-reverse' : 'lg:flex-row') + " px-4 sm:px-8 py-8 sm:py-10 gap-8 sm:gap-12 max-w-[1400px] mx-auto w-full"}>
