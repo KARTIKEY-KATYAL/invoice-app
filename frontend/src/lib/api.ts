@@ -1,25 +1,57 @@
-// Simple API helper using fetch
-export const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+// Production-ready API helper using fetch
+const getApiBase = () => {
+  const envUrl = import.meta.env.VITE_API_URL
+  if (envUrl) return envUrl
+  
+  // Fallback for different environments
+  if (import.meta.env.PROD) {
+    return 'https://your-railway-app.railway.app'
+  }
+  return 'http://localhost:3000'
+}
+
+export const API_BASE = getApiBase()
 
 async function request(path: string, opts: RequestInit = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(opts.headers||{})
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 30000) // 30s timeout
+  
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...opts,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(opts.headers||{})
+      }
+    })
+    
+    clearTimeout(timeoutId)
+    
+    if(!res.ok) {
+      let msg = 'Request failed'
+      try { 
+        const data = await res.json()
+        msg = data.message || data.error || JSON.stringify(data)
+      } catch {
+        msg = `HTTP ${res.status}: ${res.statusText}`
+      }
+      throw new Error(msg)
     }
-  })
-  if(!res.ok) {
-    let msg = 'Request failed'
-    try { const data = await res.json(); msg = data.message || JSON.stringify(data) } catch {}
-    throw new Error(msg)
+    
+    const ct = res.headers.get('content-type') || ''
+    if(ct.includes('application/pdf')) {
+      return res.blob()
+    }
+    if(ct.includes('application/json')) return res.json()
+    return res.text()
+  } catch (error) {
+    clearTimeout(timeoutId)
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timeout - please try again')
+    }
+    throw error
   }
-  const ct = res.headers.get('content-type') || ''
-  if(ct.includes('application/pdf')) {
-    return res.blob()
-  }
-  if(ct.includes('application/json')) return res.json()
-  return res.text()
 }
 
 export const api = {

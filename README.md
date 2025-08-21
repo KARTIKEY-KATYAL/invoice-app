@@ -2,41 +2,95 @@
 
 This repository contains a full-stack Invoice Generator built with:
 
-- Frontend: React + Vite + TypeScript + Tailwind + shadcn UI + Redux + TanStack Query
-- Backend: Node.js + Express + TypeScript, MongoDB, Puppeteer for server-side PDF generation
+- **Frontend**: React + Vite + TypeScript + Tailwind + shadcn UI + Redux + TanStack Query
+- **Backend**: Node.js + Express + TypeScript, MongoDB, Puppeteer for server-side PDF generation
 
-Important: do NOT commit secrets. Use `.env` locally (see `backend/.env.example`).
+## 🚀 Production Deployment
 
-## Quick local setup (backend)
+### Live Application
+- **Frontend**: Deployed on Vercel
+- **Backend**: Deployed on Railway
 
-1. Create a `.env` file in `backend/` (copy from `.env.example`) and fill in values.
+### Quick Production Setup
+1. **Backend on Railway**: Set environment variables in Railway dashboard
+2. **Frontend on Vercel**: Set `VITE_API_URL` to your Railway domain
+3. **Database**: Use MongoDB Atlas for production
+
+📖 **Detailed deployment guide**: See [PRODUCTION.md](./PRODUCTION.md)
+
+## 🛠️ Local Development
+
+### Backend Setup
+1. Create a `.env` file in `backend/` (copy from `.env.example`) and fill in values
 2. Install dependencies and run:
 
-```powershell
+```bash
 cd backend
 pnpm install
-pnpm run build
-pnpm start
+pnpm run dev
 ```
 
-## Quick local setup (frontend)
-
-```powershell
+### Frontend Setup
+```bash
 cd frontend
 pnpm install
 pnpm run dev
 ```
 
-## Environment variables (backend)
+## 📋 Environment Variables
 
-- `MONGO_URL` - MongoDB connection string
-- `JWT_SECRET` - secret used for signing JWT tokens
-- `FRONTEND_ORIGIN` - allowed frontend origin for CORS
-- `PORT` - backend port
-- `CHROME_PATH` (optional) - absolute path to Chrome/Chromium binary for Puppeteer
+### Backend (.env)
+```bash
+MONGO_URI=mongodb://localhost:27017/invoice_app
+JWT_SECRET=your-secret-key
+FRONTEND_ORIGIN=http://localhost:5173
+PORT=3000
+```
 
-## Notes
+### Frontend (.env.local)
+```bash
+VITE_API_URL=http://localhost:3000
+```
 
-- The backend uses Puppeteer to generate PDFs; some hosting providers require you to install a Chrome binary or allow headless chrome. The code allows specifying `CHROME_PATH`.
-- Remove any leaked secrets from git history if necessary.
+## 🔧 Production Features
+
+### Security & Performance
+- ✅ CORS configuration for production domains
+- ✅ Rate limiting and security headers
+- ✅ Request compression and optimization
+- ✅ Environment-specific configurations
+- ✅ Error handling and logging
+- ✅ Health check endpoints
+
+### Deployment Ready
+- ✅ Vercel configuration (`vercel.json`)
+- ✅ Railway configuration (`railway.toml`)
+- ✅ Docker support with multi-stage builds
+- ✅ Production environment files
+- ✅ Deployment checklist scripts
+
+## 🏃‍♂️ Quick Deploy Check
+
+Run the deployment checklist:
+```bash
+# Windows
+deploy-check.bat
+
+# Linux/Mac
+./deploy-check.sh
+```
+
+## 📝 Notes
+
+- The backend uses Puppeteer for PDF generation with Chrome/Chromium
+- Railway automatically handles Chrome installation
+- Never commit secrets - use environment variables
+- MongoDB Atlas recommended for production database
+
+## 🔗 Key Files
+
+- `PRODUCTION.md` - Detailed production deployment guide
+- `frontend/vercel.json` - Vercel deployment configuration
+- `backend/railway.toml` - Railway deployment configuration
+- `backend/Dockerfile` - Docker configuration for containerized deployment
 

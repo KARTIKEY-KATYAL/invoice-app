@@ -10,22 +10,87 @@ import invoiceRoutes from './routes/invoice'
 
 export function createApp() {
   const app = express()
+  
+  // Trust proxy for Railway deployment
   app.set('trust proxy', 1)
-  app.use(cors({ origin: env.frontendOrigin, credentials: true }))
-  app.use(helmet())
+  
+  // CORS configuration for production
+  app.use(cors({ 
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true)
+      
+      if (env.frontendOrigin.some(allowedOrigin => {
+        // Support wildcard subdomains for vercel
+        if (allowedOrigin.includes('*')) {
+          const pattern = allowedOrigin.replace(/\*/g, '.*')
+          return new RegExp(`^${pattern}$`).test(origin)
+        }
+        return allowedOrigin === origin
+      })) {
+        return callback(null, true)
+      }
+      
+      return callback(new Error('Not allowed by CORS'))
+    },
+    credentials: true 
+  }))
+  
+  // Security middleware
+  app.use(helmet({
+    crossOriginEmbedderPolicy: false, // Required for PDF generation
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
+  }))
+  
   app.use(compression())
   app.use(express.json({ limit: '1mb' }))
-  app.use(rateLimit({ windowMs: env.rateLimitWindowMs, max: env.rateLimitMax }))
+  
+  // Rate limiting
+  app.use(rateLimit({ 
+    windowMs: env.rateLimitWindowMs, 
+    max: env.rateLimitMax,
+    message: { error: 'Too many requests, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  }))
+  
+  // Logging
   app.use(env.node === 'development' ? httpLoggerDev : httpLogger)
 
-  app.get('/health', (req,res)=> res.json({ status:'ok', time: new Date().toISOString() }))
+  // Health check endpoint
+  app.get('/health', (req, res) => res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    environment: env.node,
+    version: process.env.npm_package_version || '1.0.0'
+  }))
+  
+  // API routes
   app.use('/api/auth', authRoutes)
   app.use('/api/invoice', invoiceRoutes)
 
-  app.use((_,__ , next)=> next())
-  app.use((err:any, _req:express.Request, res:express.Response, _next:express.NextFunction)=> {
-    console.error('Unhandled error', err)
-    res.status(err.status || 500).json({ message: err.message || 'Internal Server Error' })
+  // 404 handler
+  app.use('*', (req, res) => {
+    res.status(404).json({ error: 'Route not found' })
+  })
+  
+  // Global error handler
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('Unhandled error:', err)
+    
+    // Don't leak error details in production
+    const message = env.node === 'production' 
+      ? 'Internal Server Error' 
+      : err.message || 'Internal Server Error'
+    
+    res.status(err.status || 500).json({ error: message })
   })
 
   return app

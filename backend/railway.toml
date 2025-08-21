@@ -1,0 +1,16 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "pnpm start"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "always"
+
+[env]
+PORT = "3000"
+NODE_ENV = "production"
+
+# Nixpacks specific configuration
+[nixpacks]
+apt = ["chromium"]
