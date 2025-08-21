@@ -21,7 +21,7 @@ const getFrontendOrigins = () => {
       'https://invoice-app-beta-lac.vercel.app/',
       'https://invoice-m5gkv5vbq-kartikey-katyals-projects.vercel.app',
       'https://invoice-app-kartikey-katyals-projects.vercel.app',
-      'https://your-vercel-domain.vercel.app' // Replace with actual domain
+    
     ]
   }
   
